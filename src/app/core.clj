@@ -1,7 +1,7 @@
 (ns app.core
   (:use overtone.live))
 
-(defn drm
+ bbdaw(defn drm
   ""
   [ini beats & args]
   (let [timeblock (/ beats (count args) )]
@@ -38,7 +38,6 @@
         stereo-audio (pan2 audio pan amp)]
     (out 0 stereo-audio)))
 
-(doc boot-server)
 
 ;(def tempo (metronome 120)) ;; Set a metronome to 120 BPM
 ;
@@ -109,11 +108,20 @@
 ;;(server-status)
 ;;
 ;;(kill-server)
-;;(boot-server )
-;;
-;;(-> (midi-connected-devices)
-;;    count
-;;    )
+
+(boot-server )
+;; MIDIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+(-> (midi-connected-devices)
+    count
+    )
+                                        ;(on-event [:midi :note-on]
+                                        ;          (fn [msg] (println "PAD:" msg))
+                                        ;          ::emp16-on)
+                                        ;
+                                        ;(on-event [:midi :control-change]
+                                        ;          (fn [msg] (println "CC:" msg))
+                                        ;          ::emp16-cc)
+
 ;;
 ;;(defsynth click []
 ;;  (let [env (env-gen (perc 0.001 0.05) :action FREE)
