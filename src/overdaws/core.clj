@@ -1,7 +1,7 @@
 (ns app.core
   (:use overtone.live))
 
- bbdaw(defn drm
+ (defn drm
   ""
   [ini beats & args]
   (let [timeblock (/ beats (count args) )]
@@ -107,9 +107,9 @@
 ;;
 ;;(server-status)
 ;;
-;;(kill-server)
+;(kill-server)
 
-(boot-server )
+;(boot-server )
 ;; MIDIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 (-> (midi-connected-devices)
     count

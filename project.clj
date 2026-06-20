@@ -1,4 +1,4 @@
-(defproject app "0.1.0-SNAPSHOT"
+(defproject overdaws "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
@@ -9,7 +9,6 @@
 				 [instaparse "1.5.0"]
 				 ]
   :plugins [[cider/cider-nrepl "0.50.2"]
-            [mx.cider/enrich-classpath "1.19.3"]
-            ]
+            [mx.cider/enrich-classpath "1.19.3"]]
 
-  :repl-options {:init-ns app.core})
+  :repl-options {:init-ns overdaws.core})
