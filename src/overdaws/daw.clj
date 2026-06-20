@@ -96,7 +96,7 @@
 ;(start 120 4)
 (not 1)
 
-(metro-vol! 1)
+(metro-vol! 0)
 (barlen! 4)
 (bpm! 120)
 
