@@ -1,7 +1,14 @@
-(ns app.daw
+(ns overdaws.daw
+  (:require [overdaws.schema :refer [->overdaws-state Daw]]
+            [malli.core :as m])
   (:use overtone.core))
 
-(def daw-state (atom {}))
+(def *daw* :default)
+(defmacro with-daw [dawname & body]
+  `(binding [*daw* ~dawname]
+     ~@body))
+
+(def state (->overdaws-state))
 
 (defsynth click [amp 0.5]
   (let [env (env-gen (perc 0.001 0.05) :action FREE)
@@ -13,93 +20,85 @@
         sig (* amp env (sin-osc 1500))]
     (out 0 (pan2 sig 0))))
 
-(defn get-daw-val [name & args]
-  (get-in @daw-state (cons name args)))
+(defn dval [& args]
+  (get-in @state (cons *daw* args)))
 
-(defn set-daw-val [name path val]
-  (swap! daw-state assoc-in (cons name path) val))
+(defn dval! [& args]
+  (let [path (butlast args)
+        val (last args)]
+    (swap! state assoc-in (cons *daw* path) val)))
 
-(defn daw-getter [name]
-  (fn [& args] (apply get-daw-val name args)))
+(defn metro-vol! [vol]
+  (dval! :metro-vol vol))
 
-(defn daw-setter [name]
-  (fn [path val] (set-daw-val name path val)))
+(defn bpm! [val]
+   (dval! :bpm val)
+   ((dval :metro) :bpm val))
 
-(def dval (daw-getter :default))
-(def dval! (daw-setter :default))
+(defn barlen! [val]
+   (dval! :barlen val))
 
-(defn metro-vol!
-  ([vol]
-   (metro-vol! :default vol))
-  ([name vol]
-   (set-daw-val name [:metro-vol] vol)))
-
-(defn bpm!
-  ([val]
-   (bpm! :default val)
-   )
-  ([name val]
-   (set-daw-val name [:bpm] val)
-   ((get-daw-val name :metro) :bpm val)))
-
-(defn barlen!
-  ([val]
-   (barlen! :default val)
-   )
-  ([name val]
-   (set-daw-val name [:barlen] val)))
-
-(metro-vol! 1)
-
-(get-daw-val :default :metro-vol)
-
-
+(defn metro! []
+  (if (zero? (dval :metro-vol))
+    (do (metro-vol! 1) "Metronome ON")
+    (do (metro-vol! 0) "Metronome OFF")))
 
 (defn play-loop
-  ([]
-   (play-loop :default))
-  ([dname]
-   (play-loop dname ((get-daw-val dname :metro))))
-  ([dname beat]
-   (let [m (get-daw-val dname :metro)
-         bl (get-daw-val dname :barlen)
-         mvol #(get-daw-val dname :metro-vol)]
+  ([daw-name]
+   (play-loop daw-name ((dval :metro))))
+  ([daw-name beat]
+   (let [m (dval :metro)
+         bl (dval :barlen)
+         mvol #(dval :metro-vol)]
 
      ;; Metronome player
-     (apply-at (m beat) #(click-accent :amp (mvol)) [])
-     (doseq [x (range 1 bl)]
-       (apply-at (m (+ x beat)) #(click :amp (mvol)) []))
-    ;;;;;;;;;;;;;;;;
+     (let [sound (if (zero? (mod beat bl))
+                   click-accent
+                   click)]
+       (apply-at (m (inc beat)) #(sound :amp (mvol)) []))
+     (apply-at (m (inc beat)) #'play-loop [daw-name (inc beat)])
+     ;;;;;;;;;;;;;;;;
 
-     (apply-at (m (+ beat bl)) #'play-loop [dname (+ bl beat)])))
-  )
+     )))
 
 
+(defn add-daw!
+  ([bpm]
+   (add-daw! :default bpm 4))
+  ([bpm barlen]
+   (add-daw! :default bpm barlen))
+  ([daw-name bpm barlen]
+   (if-let [x (daw-name @state)]
+     "DAW ALREADY EXISTS"
+     (do
+       (swap! state assoc daw-name
+              {
+               :name daw-name
+               :tracks {}
+               :bpm bpm
+               :barlen barlen
+               :metro (metronome bpm)
+               :metro-vol 0
+               })
+       (play-loop daw-name)))))
 
-(defn start
-  ([bpm bar-len]
-   (start "default" bpm bar-len))
-  ([name bpm bar-len]
-   (let [kname (keyword name)
-         met (metronome bpm)]
-     (when (kname @daw-state)
-       (throw (ex-info "Daw already exists" {:name kname})))
-     (swap! daw-state assoc kname {:synths {}
-                                   :bpm bpm
-                                   :barlen bar-len
-                                   :metro met
-                                   :metro-vol 0})
-     (play-loop kname))))
+;(defn drums
+;  ([& {:as drspecs}]
+;   (apply drums :default drspecs))
+;  ([dawname & {:as drspecs}]
+;
+;   ))
 
-;(play-loop)
 
-;(start 120 4)
-(not 1)
+(-> @state)
 
-(metro-vol! 0)
-(barlen! 4)
-(bpm! 120)
-
-((dval :metro) :bpm 120)
-
-(dval! [:barlen] 3)
+(add-daw! 80)
+(bpm! 80)
+(metro!)
+;
+;(metro-vol! )
+;
+; (add-daw!)
+; (metro!)
+ (stop)
+; (play-loop) 

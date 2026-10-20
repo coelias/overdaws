@@ -1,16 +1,25 @@
-(ns app.core
+(ns overdaws.core
+  (:require [malli.core :as m])
   (:use overtone.live))
 
- (defn drm
+
+(m/coerce Track {:track1 {:type :drums :name :track1 :synths {} :bpm 1 :barlen 1 :metro (metronome 3)}})
+
+(defn drm
   ""
   [ini beats & args]
   (let [timeblock (/ beats (count args) )]
     (loop [[f & r] args beg ini res '()]
       (if f
         (recur r (+ beg timeblock)
-               (if (coll? f)
-                 (concat res (apply drm beg  timeblock f))
-                 (cons [f beg] res)))
+               (cond (and (coll? f) (-> f first string?))
+                     (concat res (map #(vector (keyword %) beg) f))
+                     (coll? f)
+                     (concat res (apply drm beg  timeblock f))
+                     (= :- f)
+                     res
+                     :else
+                     (cons [f beg] res)))
         res))))
 
 (defn sym->inst [k]
@@ -20,15 +29,21 @@
         (into [] (repeat (Integer/parseInt times) (keyword inst)))
         (keyword k))))
 
-(defmacro drt [& args]
+
+(defn sym->inst [k]
+  (cond (vector? k)
+        (mapv sym->inst k)
+        (list? k)
+        (mapv name k)
+        :else
+        (if-let [[_ inst times] (re-find #"(.*)\*([0-9]+)" (name k))]
+          (into [] (repeat (Integer/parseInt times) (keyword inst)))
+          (keyword k))))
+
+(defmacro drt [track-name & args]
   (apply list drm 0 4 (map sym->inst args)))
 
-
-
-
-(def kick (load-sample "drums/KickA-Hard-001-Balcony.wav"))
-
-
+(drt :trackname [:a*3 :c] :b :d)
 
 
 (defsynth play-sample [buf 0 amp 1.0 pan 0.0 rate 1.0]
@@ -108,7 +123,7 @@
 ;;(server-status)
 ;;
 ;(kill-server)
-
+;
 ;(boot-server )
 ;; MIDIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 (-> (midi-connected-devices)

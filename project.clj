@@ -6,8 +6,7 @@
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [overtone/overtone "0.16.3331"]
 				 [nrepl "1.1.0"]
-				 [instaparse "1.5.0"]
-				 ]
+				 [metosin/malli "0.20.1"]]
   :plugins [[cider/cider-nrepl "0.50.2"]
             [mx.cider/enrich-classpath "1.19.3"]]
 
